@@ -224,24 +224,26 @@ class RawDrupalContext extends RawMinkContext implements DrupalAwareInterface {
    */
   public function cleanUsers() {
     // Remove any users that were created.
-    try {
-      if (!empty($this->users)) {
-        foreach ($this->users as $user) {
-            $account = user_load($user->uid);
-            node_user_predelete($account);
-
+    if (!empty($this->users)) {
+      foreach ($this->users as $user) {
+        try {
+          $tick = microtime(true);
+          $account = user_load($user->uid);
+          node_user_predelete($account);
 
           $this->getDriver()->userDelete($user);
+          $this->getDriver()->processBatch();
         }
-        $this->getDriver()->processBatch();
-        $this->users = array();
-        $this->user = FALSE;
-        if ($this->loggedIn()) {
-          $this->logout();
+        catch (\Exception $e) {
+          print "Exception " . $e->getMessage();
         }
-     }
+      }
+      $this->users = array();
+      $this->user = FALSE;
+      if ($this->loggedIn()) {
+        $this->logout();
+      }
     }
-    catch (\Exception $e) {}
   }
 
   /**
